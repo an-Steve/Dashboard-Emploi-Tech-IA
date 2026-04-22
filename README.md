@@ -24,7 +24,7 @@ Ce dashboard analytique a été conçu pour explorer et visualiser les grandes t
 
 ##  Démo en direct
 
-👉 **[Cliquez ici pour voir le Dashboard en ligne](https://an-steve.github.io/Dashboard-Emploi-Tech/)**
+👉 **[Cliquez ici pour voir le Dashboard en ligne](https://an-steve.github.io/Dashboard-Emploi-Tech-IA/)**
 
 ---
 
