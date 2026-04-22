@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Emploi Tech & IA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+  <style>
+    :root {
+      --bg: #080c14;
+      --surface: #0d1420;
+      --surface2: #121b2e;
+      --border: #1e2d47;
+      --accent: #00d4ff;
+      --accent2: #7c3aed;
+      --accent3: #10b981;
+      --accent4: #f59e0b;
+      --danger: #ef4444;
+      --text: #e2e8f0;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+      --glow: rgba(0,212,255,0.15);
+      --card-border: 1px solid var(--border);
+      --radius: 12px;
+    }
+    [data-theme="light"] {
+      --bg: #f0f4ff;
+      --surface: #ffffff;
+      --surface2: #e8eeff;
+      --border: #c5d0e8;
+      --accent: #0284c7;
+      --accent2: #7c3aed;
+      --accent3: #059669;
+      --accent4: #d97706;
+      --danger: #dc2626;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --text-dim: #475569;
+      --glow: rgba(2,132,199,0.1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* GRID BACKGROUND */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.3;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ---- HEADER ---- */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(8,12,20,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+    }
+    [data-theme="light"] header {
+      background: rgba(240,244,255,0.85);
+    }
+    .header-inner {
+      max-width: 1440px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      gap: 1.5rem;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .logo-text { font-size: 1rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
+    .logo-sub { font-size: 0.65rem; font-family: 'DM Mono', monospace; color: var(--text-muted); }
+
+    .header-controls { display: flex; align-items: center; gap: 1rem; }
+
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      font-family: 'DM Mono', monospace;
+      color: var(--text-muted);
+    }
+    .filter-bar label { white-space: nowrap; }
+    .filter-bar select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.35rem 0.6rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.75rem;
+      cursor: pointer;
+      outline: none;
+    }
+    .filter-bar select:focus { border-color: var(--accent); }
+
+    .btn-icon {
+      background: var(--surface);
+      border: var(--card-border);
+      color: var(--text-dim);
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+    .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-export {
+      background: linear-gradient(135deg, var(--accent), #0099bb);
+      color: #000;
+      border: none;
+      padding: 0.45rem 1rem;
+      border-radius: 8px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.78rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+    }
+    .btn-export:hover { opacity: 0.85; }
+
+    /* ---- HERO ---- */
+    .hero {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.2);
+      padding: 0.25rem 0.75rem;
+      border-radius: 99px;
+      margin-bottom: 1rem;
+      letter-spacing: 0.05em;
+    }
+    .hero-tag::before { content: '●'; font-size: 0.5rem; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .hero h1 {
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    /* ---- KPI STRIP ---- */
+    .kpi-strip {
+      max-width: 1440px;
+      margin: 0 auto 1.5rem;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      position: relative;
+      z-index: 1;
+    }
+    @media (max-width: 900px) { .kpi-strip { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .kpi-strip { grid-template-columns: 1fr; } }
+
+    .kpi-card {
+      background: var(--surface);
+      border: var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.2s;
+      animation: fadeUp 0.5s ease both;
+    }
+    .kpi-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .kpi-card:nth-child(1)::before { background: var(--accent); }
+    .kpi-card:nth-child(2)::before { background: var(--accent3); }
+    .kpi-card:nth-child(3)::before { background: var(--accent2); }
+    .kpi-card:nth-child(4)::before { background: var(--accent4); }
+
+    .kpi-label { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+    .kpi-value { font-size: 2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.25rem; }
+    .kpi-card:nth-child(1) .kpi-value { color: var(--accent); }
+    .kpi-card:nth-child(2) .kpi-value { color: var(--accent3); }
+    .kpi-card:nth-child(3) .kpi-value { color: var(--accent2); }
+    .kpi-card:nth-child(4) .kpi-value { color: var(--accent4); }
+    .kpi-delta {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .delta-up { color: var(--accent3); }
+    .delta-down { color: var(--danger); }
+
+    @keyframes fadeUp { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform: translateY(0); } }
+    .kpi-card:nth-child(1) { animation-delay: 0.1s; }
+    .kpi-card:nth-child(2) { animation-delay: 0.2s; }
+    .kpi-card:nth-child(3) { animation-delay: 0.3s; }
+    .kpi-card:nth-child(4) { animation-delay: 0.4s; }
+
+    /* ---- TABS ---- */
+    .tabs-wrap {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      z-index: 1;
+      position: relative;
+    }
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'Syne', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 0.75rem 1.25rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+      position: relative;
+      top: 1px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .tab-btn .tab-icon { font-size: 0.9rem; }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ---- PANELS ---- */
+    .panel { display: none; }
+    .panel.active { display: block; animation: fadeUp 0.35s ease; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+    @media (max-width: 1100px) { .grid-3 { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--surface);
+      border: var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+    .card.wide { grid-column: span 2; }
+    @media (max-width: 768px) { .card.wide { grid-column: span 1; } }
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      gap: 1rem;
+    }
+    .card-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+    .card-sub {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+    .chart-wrap { position: relative; height: 260px; }
+    .chart-wrap-sm { position: relative; height: 200px; }
+    .chart-wrap-lg { position: relative; height: 340px; }
+
+    /* ---- TABLE ---- */
+    .rankings-table { width: 100%; border-collapse: collapse; }
+    .rankings-table th {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--border);
+    }
+    .rankings-table td {
+      padding: 0.65rem 0.75rem;
+      font-size: 0.82rem;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      vertical-align: middle;
+    }
+    .rankings-table tr:last-child td { border-bottom: none; }
+    .rankings-table tbody tr { transition: background 0.15s; }
+    .rankings-table tbody tr:hover { background: var(--surface2); }
+    .rank-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      width: 36px;
+    }
+    .bar-cell { width: 140px; }
+    .bar-bg { background: var(--border); border-radius: 2px; height: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.8s ease; }
+    .badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 99px;
+      font-weight: 500;
+    }
+    .badge-ai { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.2); }
+    .badge-dev { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+    .badge-data { background: rgba(16,185,129,0.1); color: var(--accent3); border: 1px solid rgba(16,185,129,0.2); }
+    .badge-cloud { background: rgba(245,158,11,0.1); color: var(--accent4); border: 1px solid rgba(245,158,11,0.2); }
+    .badge-sec { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+
+    /* ---- MAP ---- */
+    #map-svg { width: 100%; height: 100%; }
+    .map-wrap { position: relative; height: 380px; background: var(--surface2); border-radius: 8px; overflow: hidden; }
+    .map-tooltip {
+      position: absolute;
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.78rem;
+      pointer-events: none;
+      display: none;
+      z-index: 10;
+      min-width: 180px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .map-tooltip strong { display: block; font-size: 0.88rem; margin-bottom: 0.4rem; color: var(--accent); }
+    .map-tooltip-row { display: flex; justify-content: space-between; gap: 1rem; margin-top: 0.25rem; }
+    .map-tooltip-row span:last-child { font-family: 'DM Mono', monospace; color: var(--text-dim); }
+    .map-legend {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-top: 0.75rem;
+    }
+    .legend-bar {
+      flex: 1;
+      max-width: 200px;
+      height: 6px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #0d1420, var(--accent));
+    }
+
+    /* ---- MAP CONTROLS ---- */
+    .map-selector {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .map-sel-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .map-sel-btn.active { background: rgba(0,212,255,0.1); border-color: var(--accent); color: var(--accent); }
+
+    /* ---- RADAR SELECT ---- */
+    .country-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    .country-chip {
+      padding: 0.3rem 0.75rem;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-muted);
+    }
+    .country-chip.selected { border-color: var(--accent2); background: rgba(124,58,237,0.1); color: #a78bfa; }
+
+    /* ---- INSIGHT BOX ---- */
+    .insight-box {
+      background: var(--surface2);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      padding: 0.75rem 1rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+      margin-top: 1rem;
+    }
+    .insight-box strong { color: var(--accent); }
+
+    /* ---- SOURCE ---- */
+    footer {
+      max-width: 1440px;
+      margin: 2rem auto 0;
+      padding: 1.5rem 2rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">TechJob<span style="color:var(--accent)">Intel</span></div>
+        <div class="logo-sub">Marché Emploi Tech & IA · 2024</div>
+      </div>
+    </a>
+    <div class="header-controls">
+      <div class="filter-bar">
+        <label>Secteur :</label>
+        <select id="sector-filter" onchange="applyFilters()">
+          <option value="all">Tous</option>
+          <option value="ai">Intelligence Artificielle</option>
+          <option value="dev">Développement</option>
+          <option value="data">Data / Analytics</option>
+          <option value="cloud">Cloud / DevOps</option>
+          <option value="cyber">Cybersécurité</option>
+        </select>
+      </div>
+      <button class="btn-icon" onclick="toggleTheme()" title="Changer de thème">🌙</button>
+      <button class="btn-export" onclick="exportData()">⬇ Exporter</button>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">Données en temps réel · Mis à jour Q4 2024</div>
+  <h1>Marché de l'Emploi<br><span>Tech & Intelligence Artificielle</span></h1>
+  <p>Indicateurs clés · Salaires · Compétences · Géographie · 2024</p>
+</div>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-label">Offres Tech Mondiales</div>
+    <div class="kpi-value" id="kpi-offres">4.2M</div>
+    <div class="kpi-delta delta-up">▲ +18% vs 2023</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Salaire Médian (€/an)</div>
+    <div class="kpi-value" id="kpi-salary">62k</div>
+    <div class="kpi-delta delta-up">▲ +9.4% vs 2023</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Postes IA Ouverts</div>
+    <div class="kpi-value" id="kpi-ai">847k</div>
+    <div class="kpi-delta delta-up">▲ +41% vs 2023</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Taux de Chômage Tech</div>
+    <div class="kpi-value" id="kpi-chom">2.1%</div>
+    <div class="kpi-delta delta-down">▼ −0.6pt vs 2023</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showPanel('overview',this)"><span class="tab-icon">📊</span> Vue d'ensemble</button>
+    <button class="tab-btn" onclick="showPanel('salaires',this)"><span class="tab-icon">💰</span> Salaires</button>
+    <button class="tab-btn" onclick="showPanel('competences',this)"><span class="tab-icon">🧠</span> Compétences</button>
+    <button class="tab-btn" onclick="showPanel('carte',this)"><span class="tab-icon">🗺️</span> Carte mondiale</button>
+    <button class="tab-btn" onclick="showPanel('comparaison',this)"><span class="tab-icon">⚖️</span> Comparaison pays</button>
+  </div>
+
+  <!-- PANEL: OVERVIEW -->
+  <div class="panel active" id="panel-overview">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Offres d'emploi par secteur Tech (2024)</div>
+            <div class="card-sub">Distribution par domaine technologique</div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartSecteurs"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Évolution des offres Tech (2019–2024)</div>
+            <div class="card-sub">Croissance annuelle par domaine</div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartEvolution"></canvas></div>
+      </div>
+      <div class="card wide">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Top métiers les plus recherchés — 2024</div>
+            <div class="card-sub">Classement par volume d'offres mondiales</div>
+          </div>
+        </div>
+        <table class="rankings-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Métier</th>
+              <th>Domaine</th>
+              <th>Salaire médian</th>
+              <th>Demande</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody id="jobs-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: SALAIRES -->
+  <div class="panel" id="panel-salaires">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Salaires médians par rôle Tech (€/an)</div>
+            <div class="card-sub">Données marché européen 2024</div>
+          </div>
+        </div>
+        <div class="chart-wrap-lg"><canvas id="chartSalaires"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Salaire moyen selon l'expérience</div>
+            <div class="card-sub">Junior → Senior → Lead (Europa)</div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartExp"></canvas></div>
+        <div class="insight-box">
+          💡 Un profil <strong>Senior IA / ML Engineer</strong> gagne en moyenne <strong>+67%</strong> de plus qu'un Junior après 5 ans. Le gap s'accélère avec l'essor des LLMs depuis 2023.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Évolution salariale Tech vs autres secteurs</div>
+            <div class="card-sub">Indice base 100 en 2019</div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartSalComp"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Bonus & avantages — Entreprises Tech</div>
+            <div class="card-sub">% d'entreprises offrant ces avantages</div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartBonus"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: COMPETENCES -->
+  <div class="panel" id="panel-competences">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Compétences les plus demandées — 2024</div>
+            <div class="card-sub">Classées par fréquence dans les offres d'emploi</div>
+          </div>
+        </div>
+        <div class="chart-wrap-lg"><canvas id="chartSkills"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Technologies IA — croissance des offres</div>
+            <div class="card-sub">Évolution 2022→2024 (% d'augmentation)</div>
+          </div>
+        </div>
+        <div class="chart-wrap-lg"><canvas id="chartAITech"></canvas></div>
+      </div>
+      <div class="card wide">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Langages de programmation — popularité & salaire</div>
+            <div class="card-sub">Bubble chart : taille = nombre d'offres</div>
+          </div>
+        </div>
+        <div class="chart-wrap-lg"><canvas id="chartBubble"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: CARTE -->
+  <div class="panel" id="panel-carte">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Carte mondiale — Emploi Tech</div>
+          <div class="card-sub">Survolez un pays pour afficher les données</div>
+        </div>
+        <div class="map-selector">
+          <button class="map-sel-btn active" onclick="switchMapMetric('offres',this)">Offres</button>
+          <button class="map-sel-btn" onclick="switchMapMetric('salaire',this)">Salaire</button>
+          <button class="map-sel-btn" onclick="switchMapMetric('croissance',this)">Croissance</button>
+        </div>
+      </div>
+      <div class="map-wrap" id="map-container">
+        <svg id="map-svg"></svg>
+        <div class="map-tooltip" id="map-tooltip"></div>
+      </div>
+      <div class="map-legend">
+        <span>Faible</span>
+        <div class="legend-bar"></div>
+        <span>Élevé</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: COMPARAISON -->
+  <div class="panel" id="panel-comparaison">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Comparaison multi-pays (Radar)</div>
+            <div class="card-sub">Sélectionnez jusqu'à 4 pays</div>
+          </div>
+        </div>
+        <div class="country-selector" id="country-chips"></div>
+        <div class="chart-wrap-lg"><canvas id="chartRadar"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Offres Tech vs Salaire médian par pays</div>
+            <div class="card-sub">Corrélation volume / rémunération</div>
+          </div>
+        </div>
+        <div class="chart-wrap-lg"><canvas id="chartScatter"></canvas></div>
+        <div class="insight-box">
+          💡 Les <strong>États-Unis</strong> et la <strong>Suisse</strong> offrent les plus hauts salaires Tech, mais le marché européen (France, Allemagne) montre la <strong>croissance la plus forte</strong> en 2024.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end tabs-wrap -->
+
+<footer>
+  <span>Sources : LinkedIn Jobs Report, Stack Overflow Survey 2024, OCDE, Eurostat, GitHub Octoverse — Données à titre illustratif.</span>
+  <span>Réalisé par <strong style="color:var(--accent)">ANTON NELCON Steve</strong></span>
+</footer>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const COLORS = {
+  accent: '#00d4ff',
+  accent2: '#7c3aed',
+  accent3: '#10b981',
+  accent4: '#f59e0b',
+  danger: '#ef4444',
+};
+const getThemeColor = (key) => getComputedStyle(document.documentElement).getPropertyValue('--' + key).trim();
+
+const jobsData = [
+  { rank:1, title:'ML / AI Engineer', sector:'ai', salary:'€78k', demand:97, score:98 },
+  { rank:2, title:'Data Scientist', sector:'data', salary:'€65k', demand:91, score:94 },
+  { rank:3, title:'Cloud Architect', sector:'cloud', salary:'€82k', demand:88, score:92 },
+  { rank:4, title:'Fullstack Developer', sector:'dev', salary:'€56k', demand:86, score:90 },
+  { rank:5, title:'DevSecOps Engineer', sector:'cyber', salary:'€74k', demand:82, score:87 },
+  { rank:6, title:'LLM / Prompt Engineer', sector:'ai', salary:'€70k', demand:80, score:85 },
+  { rank:7, title:'Data Engineer', sector:'data', salary:'€63k', demand:78, score:83 },
+  { rank:8, title:'Cybersecurity Analyst', sector:'cyber', salary:'€68k', demand:76, score:80 },
+];
+
+const badgeMap = { ai:'badge-ai', dev:'badge-dev', data:'badge-data', cloud:'badge-cloud', cyber:'badge-sec' };
+const sectorLabel = { ai:'IA / ML', dev:'Dev', data:'Data', cloud:'Cloud', cyber:'Sécurité' };
+
+// ============================================================
+// TABLE
+// ============================================================
+function renderTable(data) {
+  const tbody = document.getElementById('jobs-table-body');
+  tbody.innerHTML = '';
+  data.forEach(d => {
+    const max = 97;
+    const pct = Math.round((d.demand / max) * 100);
+    tbody.innerHTML += `
+      <tr>
+        <td class="rank-num">${d.rank}</td>
+        <td><strong>${d.title}</strong></td>
+        <td><span class="badge ${badgeMap[d.sector]}">${sectorLabel[d.sector]}</span></td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--accent3)">${d.salary}</td>
+        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${d.sector==='ai'?'var(--accent2)':d.sector==='data'?'var(--accent3)':d.sector==='cloud'?'var(--accent4)':d.sector==='cyber'?'var(--danger)':'var(--accent)'}"></div></div></td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--text-dim)">${d.score}/100</td>
+      </tr>`;
+  });
+}
+renderTable(jobsData);
+
+// ============================================================
+// FILTERS
+// ============================================================
+function applyFilters() {
+  const s = document.getElementById('sector-filter').value;
+  const filtered = s === 'all' ? jobsData : jobsData.filter(d => d.sector === s);
+  renderTable(filtered);
+}
+
+// ============================================================
+// CHART DEFAULTS
+// ============================================================
+const baseOpts = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'DM Mono', size: 11 }, boxWidth: 12, padding: 16 } } },
+  scales: {
+    x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { family: 'DM Mono', size: 11 } } },
+    y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { family: 'DM Mono', size: 11 } } }
+  }
+};
+
+// ============================================================
+// CHART: SECTEURS (Doughnut)
+// ============================================================
+new Chart(document.getElementById('chartSecteurs'), {
+  type: 'doughnut',
+  data: {
+    labels: ['IA / ML', 'Développement', 'Data / Analytics', 'Cloud / DevOps', 'Cybersécurité', 'Autre Tech'],
+    datasets: [{
+      data: [22, 28, 18, 14, 10, 8],
+      backgroundColor: ['rgba(124,58,237,0.85)','rgba(0,212,255,0.85)','rgba(16,185,129,0.85)','rgba(245,158,11,0.85)','rgba(239,68,68,0.85)','rgba(148,163,184,0.5)'],
+      borderColor: '#080c14',
+      borderWidth: 3,
+      hoverOffset: 8,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: {
+      legend: { position: 'right', labels: { color: '#94a3b8', font: { family: 'DM Mono', size: 11 }, boxWidth: 10, padding: 12 } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` } }
+    }
+  }
+});
+
+// ============================================================
+// CHART: EVOLUTION (Line)
+// ============================================================
+new Chart(document.getElementById('chartEvolution'), {
+  type: 'line',
+  data: {
+    labels: ['2019','2020','2021','2022','2023','2024'],
+    datasets: [
+      { label:'IA / ML', data:[100,110,145,220,310,490], borderColor:'rgba(124,58,237,0.9)', backgroundColor:'rgba(124,58,237,0.08)', tension:0.4, fill:true, pointRadius:3 },
+      { label:'Développement', data:[100,95,120,135,148,165], borderColor:'rgba(0,212,255,0.9)', backgroundColor:'rgba(0,212,255,0.06)', tension:0.4, fill:true, pointRadius:3 },
+      { label:'Data', data:[100,105,130,160,190,220], borderColor:'rgba(16,185,129,0.9)', backgroundColor:'rgba(16,185,129,0.06)', tension:0.4, fill:true, pointRadius:3 },
+      { label:'Cloud', data:[100,108,128,150,170,195], borderColor:'rgba(245,158,11,0.9)', backgroundColor:'rgba(245,158,11,0.06)', tension:0.4, fill:true, pointRadius:3 },
+    ]
+  },
+  options: { ...baseOpts, interaction: { mode:'index', intersect:false } }
+});
+
+// ============================================================
+// CHART: SALAIRES (Horizontal Bar)
+// ============================================================
+new Chart(document.getElementById('chartSalaires'), {
+  type: 'bar',
+  data: {
+    labels: ['ML Engineer','Cloud Architect','AI Researcher','Cybersecurity','Data Scientist','DevOps Eng.','Backend Dev','Frontend Dev','QA Engineer'],
+    datasets: [{
+      label: 'Salaire médian (€k/an)',
+      data: [78,82,90,68,65,62,58,52,44],
+      backgroundColor: [
+        'rgba(124,58,237,0.85)','rgba(245,158,11,0.85)','rgba(0,212,255,0.85)','rgba(239,68,68,0.85)',
+        'rgba(16,185,129,0.85)','rgba(245,158,11,0.7)','rgba(0,212,255,0.7)','rgba(0,212,255,0.5)','rgba(148,163,184,0.5)'
+      ],
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    ...baseOpts,
+    indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { family: 'DM Mono', size: 11 }, callback: v => v + 'k€' } },
+      y: { grid: { display: false }, ticks: { color: '#94a3b8', font: { family: 'DM Mono', size: 11 } } }
+    }
+  }
+});
+
+// ============================================================
+// CHART: EXPÉRIENCE
+// ============================================================
+new Chart(document.getElementById('chartExp'), {
+  type: 'bar',
+  data: {
+    labels: ['0–2 ans\n(Junior)','3–5 ans\n(Mid)','6–10 ans\n(Senior)','10+ ans\n(Lead/Staff)'],
+    datasets: [
+      { label:'Développement', data:[38,52,68,85], backgroundColor:'rgba(0,212,255,0.7)', borderRadius:4 },
+      { label:'IA / ML', data:[45,62,82,110], backgroundColor:'rgba(124,58,237,0.7)', borderRadius:4 },
+      { label:'Cloud', data:[40,57,74,95], backgroundColor:'rgba(245,158,11,0.7)', borderRadius:4 },
+    ]
+  },
+  options: { ...baseOpts, scales: { ...baseOpts.scales, y: { ...baseOpts.scales?.y, ticks: { ...baseOpts.scales?.y?.ticks, callback: v => v + 'k€' } } } }
+});
+
+// ============================================================
+// CHART: SALAIRES COMPARÉS SECTEURS
+// ============================================================
+new Chart(document.getElementById('chartSalComp'), {
+  type: 'line',
+  data: {
+    labels: ['2019','2020','2021','2022','2023','2024'],
+    datasets: [
+      { label:'Tech / IT', data:[100,102,110,118,128,142], borderColor:'rgba(0,212,255,0.9)', tension:0.4, fill:false, pointRadius:3 },
+      { label:'Finance', data:[100,101,105,110,115,121], borderColor:'rgba(16,185,129,0.8)', tension:0.4, fill:false, pointRadius:3 },
+      { label:'Santé', data:[100,101,104,107,111,116], borderColor:'rgba(245,158,11,0.8)', tension:0.4, fill:false, pointRadius:3 },
+      { label:'Tous secteurs', data:[100,100,103,106,109,112], borderColor:'rgba(148,163,184,0.5)', tension:0.4, fill:false, pointRadius:3, borderDash:[4,4] },
+    ]
+  },
+  options: { ...baseOpts, interaction: { mode:'index', intersect:false }, plugins: { ...baseOpts.plugins, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}` } } } }
+});
+
+// ============================================================
+// CHART: BONUS (Radar)
+// ============================================================
+new Chart(document.getElementById('chartBonus'), {
+  type: 'bar',
+  data: {
+    labels: ['Télétravail\ntotal','Stock\nOptions','Budget\nformation','Mutuelle\noptimale','Semaine\n4 jours','Retraite\ncomplémentaire'],
+    datasets: [{
+      label:'% entreprises Tech',
+      data:[72,48,65,81,28,55],
+      backgroundColor: [
+        'rgba(0,212,255,0.75)','rgba(124,58,237,0.75)','rgba(16,185,129,0.75)','rgba(245,158,11,0.75)',
+        'rgba(239,68,68,0.75)','rgba(148,163,184,0.6)'
+      ],
+      borderRadius:4,
+    }]
+  },
+  options: {
+    ...baseOpts,
+    plugins: { legend: { display: false } },
+    scales: {
+      ...baseOpts.scales,
+      y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => v + '%' } }
+    }
+  }
+});
+
+// ============================================================
+// CHART: SKILLS
+// ============================================================
+new Chart(document.getElementById('chartSkills'), {
+  type: 'bar',
+  data: {
+    labels: ['Python','SQL','Cloud (AWS/GCP/Azure)','Docker/K8s','React/Next.js','Machine Learning','Spark/Hadoop','TypeScript','Rust','Go'],
+    datasets: [{
+      label:'Fréquence dans offres (%)',
+      data:[82,71,68,62,58,55,44,42,22,35],
+      backgroundColor: ['rgba(0,212,255,0.85)','rgba(0,212,255,0.75)','rgba(245,158,11,0.85)','rgba(245,158,11,0.7)','rgba(16,185,129,0.85)','rgba(124,58,237,0.85)','rgba(16,185,129,0.6)','rgba(16,185,129,0.5)','rgba(239,68,68,0.7)','rgba(148,163,184,0.6)'],
+      borderRadius:4,
+    }]
+  },
+  options: {
+    ...baseOpts,
+    indexAxis:'y',
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, callback: v => v + '%' } },
+      y: { grid: { display:false }, ticks: { color:'#94a3b8', font: { family:'DM Mono', size:11 } } }
+    }
+  }
+});
+
+// ============================================================
+// CHART: AI TECH GROWTH
+// ============================================================
+new Chart(document.getElementById('chartAITech'), {
+  type: 'bar',
+  data: {
+    labels: ['LLM / GPT','Computer Vision','MLOps','NLP','Reinforcement\nLearning','GenAI Tools','Embeddings','RAG / Vector DB'],
+    datasets: [
+      { label:'2022→2023', data:[180,65,95,70,45,220,80,140], backgroundColor:'rgba(124,58,237,0.5)', borderRadius:3 },
+      { label:'2023→2024', data:[290,90,145,95,70,380,190,310], backgroundColor:'rgba(124,58,237,0.85)', borderRadius:3 },
+    ]
+  },
+  options: {
+    ...baseOpts,
+    indexAxis:'y',
+    scales: {
+      x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, callback: v => '+' + v + '%' } },
+      y: { grid: { display:false }, ticks: { color:'#94a3b8', font: { family:'DM Mono', size:11 } } }
+    }
+  }
+});
+
+// ============================================================
+// CHART: BUBBLE (Langages)
+// ============================================================
+new Chart(document.getElementById('chartBubble'), {
+  type: 'bubble',
+  data: {
+    datasets: [
+      { label:'Python', data:[{x:82,y:68,r:28}], backgroundColor:'rgba(0,212,255,0.7)' },
+      { label:'JavaScript', data:[{x:70,y:54,r:24}], backgroundColor:'rgba(245,158,11,0.7)' },
+      { label:'TypeScript', data:[{x:65,y:56,r:18}], backgroundColor:'rgba(16,185,129,0.7)' },
+      { label:'Go', data:[{x:45,y:72,r:14}], backgroundColor:'rgba(124,58,237,0.7)' },
+      { label:'Rust', data:[{x:30,y:78,r:11}], backgroundColor:'rgba(239,68,68,0.7)' },
+      { label:'Java', data:[{x:60,y:58,r:20}], backgroundColor:'rgba(148,163,184,0.6)' },
+      { label:'SQL', data:[{x:75,y:58,r:22}], backgroundColor:'rgba(0,212,255,0.4)' },
+      { label:'Kotlin', data:[{x:35,y:62,r:10}], backgroundColor:'rgba(245,158,11,0.4)' },
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins: { legend: { labels: { color:'#94a3b8', font:{ family:'DM Mono',size:11 }, boxWidth:10, padding:12 } }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label} — Popularité: ${ctx.parsed.x}% | Salaire: ${ctx.parsed.y}k€` } } },
+    scales: {
+      x: { title:{ display:true, text:'Popularité dans les offres (%)', color:'#64748b', font:{family:'DM Mono',size:11} }, grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ color:'#64748b', font:{ family:'DM Mono',size:11 } } },
+      y: { title:{ display:true, text:'Salaire médian (k€/an)', color:'#64748b', font:{family:'DM Mono',size:11} }, grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ color:'#64748b', font:{ family:'DM Mono',size:11 }, callback: v => v + 'k€' } }
+    }
+  }
+});
+
+// ============================================================
+// MAP
+// ============================================================
+const mapData = {
+  'USA':    { offres:1200, salaire:105, croissance:18, region:'Amériques' },
+  'GBR':    { offres:280, salaire:78, croissance:14, region:'Europe' },
+  'DEU':    { offres:260, salaire:72, croissance:22, region:'Europe' },
+  'FRA':    { offres:230, salaire:62, croissance:26, region:'Europe' },
+  'IND':    { offres:420, salaire:18, croissance:35, region:'Asie' },
+  'CHN':    { offres:680, salaire:32, croissance:28, region:'Asie' },
+  'CAN':    { offres:210, salaire:88, croissance:16, region:'Amériques' },
+  'AUS':    { offres:140, salaire:82, croissance:20, region:'Océanie' },
+  'SWE':    { offres:80,  salaire:75, croissance:18, region:'Europe' },
+  'NLD':    { offres:90,  salaire:74, croissance:21, region:'Europe' },
+  'CHE':    { offres:70,  salaire:118, croissance:15, region:'Europe' },
+  'BRA':    { offres:160, salaire:24, croissance:40, region:'Amériques' },
+  'SGP':    { offres:95,  salaire:88, croissance:30, region:'Asie' },
+  'JPN':    { offres:180, salaire:58, croissance:12, region:'Asie' },
+  'KOR':    { offres:150, salaire:54, croissance:22, region:'Asie' },
+  'ISR':    { offres:110, salaire:95, croissance:20, region:'Moyen-Orient' },
+  'ESP':    { offres:120, salaire:48, croissance:30, region:'Europe' },
+  'POL':    { offres:95,  salaire:42, croissance:34, region:'Europe' },
+  'NGA':    { offres:45,  salaire:12, croissance:52, region:'Afrique' },
+  'ZAF':    { offres:55,  salaire:20, croissance:45, region:'Afrique' },
+};
+
+let currentMapMetric = 'offres';
+let mapSVG, mapProjection, mapPath;
+
+function getMapValue(code) {
+  const d = mapData[code];
+  if (!d) return null;
+  return d[currentMapMetric];
+}
+
+function getMetricMax(metric) {
+  return Math.max(...Object.values(mapData).map(d => d[metric]));
+}
+
+async function initMap() {
+  const container = document.getElementById('map-container');
+  const w = container.clientWidth, h = container.clientHeight || 380;
+  const svg = d3.select('#map-svg');
+  svg.attr('viewBox', `0 0 ${w} ${h}`);
+
+  mapProjection = d3.geoNaturalEarth1()
+    .scale(w / 6.4)
+    .translate([w / 2, h / 2]);
+  mapPath = d3.geoPath().projection(mapProjection);
+
+  try {
+    const world = await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+    const countries = topojson.feature(world, world.objects.countries);
+    const countryNames = await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+
+    // ISO numeric to alpha3 (simplified mapping for key countries)
+    const numToAlpha = {
+      840:'USA',826:'GBR',276:'DEU',250:'FRA',356:'IND',156:'CHN',124:'CAN',
+      36:'AUS',752:'SWE',528:'NLD',756:'CHE',76:'BRA',702:'SGP',392:'JPN',
+      410:'KOR',376:'ISR',724:'ESP',616:'POL',566:'NGA',710:'ZAF'
+    };
+
+    mapSVG = svg.append('g').attr('class','countries');
+
+    mapSVG.selectAll('path')
+      .data(countries.features)
+      .join('path')
+      .attr('d', mapPath)
+      .attr('fill', d => {
+        const alpha = numToAlpha[+d.id];
+        const val = alpha ? getMapValue(alpha) : null;
+        if (val === null) return '#1e2d47';
+        const max = getMetricMax(currentMapMetric);
+        const t = val / max;
+        return d3.interpolate('#1e2d47', currentMapMetric==='croissance' ? '#10b981' : currentMapMetric==='salaire' ? '#f59e0b' : '#00d4ff')(t);
+      })
+      .attr('stroke', '#080c14')
+      .attr('stroke-width', 0.5)
+      .style('cursor', d => {
+        const alpha = numToAlpha[+d.id];
+        return alpha && mapData[alpha] ? 'pointer' : 'default';
+      })
+      .on('mousemove', function(event, d) {
+        const alpha = numToAlpha[+d.id];
+        if (!alpha || !mapData[alpha]) return;
+        const data = mapData[alpha];
+        const tt = document.getElementById('map-tooltip');
+        tt.style.display = 'block';
+        tt.style.left = (event.offsetX + 12) + 'px';
+        tt.style.top = (event.offsetY + 12) + 'px';
+        tt.innerHTML = `
+          <strong>${getCountryName(alpha)}</strong>
+          <div class="map-tooltip-row"><span>💼 Offres Tech</span><span>${data.offres}k</span></div>
+          <div class="map-tooltip-row"><span>💰 Salaire médian</span><span>${data.salaire}k€</span></div>
+          <div class="map-tooltip-row"><span>📈 Croissance</span><span>+${data.croissance}%</span></div>
+          <div class="map-tooltip-row"><span>🌍 Région</span><span>${data.region}</span></div>
+        `;
+        d3.select(this).attr('stroke', '#00d4ff').attr('stroke-width', 1.5);
+      })
+      .on('mouseleave', function() {
+        document.getElementById('map-tooltip').style.display = 'none';
+        d3.select(this).attr('stroke', '#080c14').attr('stroke-width', 0.5);
+      });
+  } catch(e) {
+    document.getElementById('map-container').innerHTML = '<div style="padding:2rem;color:var(--text-muted);font-family:DM Mono,monospace;font-size:0.8rem">Carte non disponible (connexion requise)</div>';
+  }
+}
+
+function getCountryName(code) {
+  const names = { USA:'États-Unis',GBR:'Royaume-Uni',DEU:'Allemagne',FRA:'France',IND:'Inde',CHN:'Chine',CAN:'Canada',AUS:'Australie',SWE:'Suède',NLD:'Pays-Bas',CHE:'Suisse',BRA:'Brésil',SGP:'Singapour',JPN:'Japon',KOR:'Corée du Sud',ISR:'Israël',ESP:'Espagne',POL:'Pologne',NGA:'Nigeria',ZAF:'Afrique du Sud' };
+  return names[code] || code;
+}
+
+function switchMapMetric(metric, btn) {
+  currentMapMetric = metric;
+  document.querySelectorAll('.map-sel-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (mapSVG) {
+    const numToAlpha = { 840:'USA',826:'GBR',276:'DEU',250:'FRA',356:'IND',156:'CHN',124:'CAN',36:'AUS',752:'SWE',528:'NLD',756:'CHE',76:'BRA',702:'SGP',392:'JPN',410:'KOR',376:'ISR',724:'ESP',616:'POL',566:'NGA',710:'ZAF' };
+    mapSVG.selectAll('path').attr('fill', d => {
+      const alpha = numToAlpha[+d.id];
+      const val = alpha ? getMapValue(alpha) : null;
+      if (val === null) return '#1e2d47';
+      const max = getMetricMax(currentMapMetric);
+      const t = val / max;
+      return d3.interpolate('#1e2d47', metric==='croissance' ? '#10b981' : metric==='salaire' ? '#f59e0b' : '#00d4ff')(t);
+    });
+  }
+}
+
+// ============================================================
+// RADAR CHART
+// ============================================================
+const radarCountries = {
+  'France':    { offres:55, salaire:62, croissance:84, formation:70, innovation:72, marché:65 },
+  'Allemagne': { offres:62, salaire:72, croissance:78, formation:75, innovation:80, marché:70 },
+  'États-Unis':{ offres:100, salaire:100, croissance:72, formation:85, innovation:100, marché:100 },
+  'Inde':      { offres:88, salaire:20, croissance:98, formation:65, innovation:60, marché:75 },
+  'Suisse':    { offres:42, salaire:100, croissance:65, formation:82, innovation:88, marché:68 },
+  'Singapour': { offres:48, salaire:88, croissance:85, formation:80, innovation:85, marché:72 },
+};
+const radarColors = [
+  ['rgba(0,212,255,0.7)','rgba(0,212,255,0.15)'],
+  ['rgba(124,58,237,0.7)','rgba(124,58,237,0.15)'],
+  ['rgba(16,185,129,0.7)','rgba(16,185,129,0.15)'],
+  ['rgba(245,158,11,0.7)','rgba(245,158,11,0.15)'],
+];
+let selectedCountries = ['France', 'Allemagne'];
+let radarChart;
+
+function buildRadarDatasets() {
+  return selectedCountries.map((c, i) => ({
+    label: c,
+    data: Object.values(radarCountries[c]),
+    borderColor: radarColors[i%4][0],
+    backgroundColor: radarColors[i%4][1],
+    pointBackgroundColor: radarColors[i%4][0],
+    borderWidth: 2,
+    pointRadius: 4,
+  }));
+}
+
+function initRadar() {
+  const ctx = document.getElementById('chartRadar').getContext('2d');
+  radarChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['Volume offres','Niveau salaire','Croissance','Formation Tech','Innovation','Attractivité marché'],
+      datasets: buildRadarDatasets()
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { r: {
+        grid: { color: 'rgba(255,255,255,0.07)' },
+        pointLabels: { color: '#94a3b8', font: { family: 'DM Mono', size: 11 } },
+        ticks: { display: false },
+        angleLines: { color: 'rgba(255,255,255,0.07)' },
+      }},
+      plugins: { legend: { labels: { color:'#94a3b8', font:{ family:'DM Mono', size:11 }, boxWidth:10, padding:12 } } }
+    }
+  });
+}
+
+function renderCountryChips() {
+  const container = document.getElementById('country-chips');
+  container.innerHTML = '';
+  Object.keys(radarCountries).forEach(c => {
+    const chip = document.createElement('div');
+    chip.className = 'country-chip' + (selectedCountries.includes(c) ? ' selected' : '');
+    chip.textContent = c;
+    chip.onclick = () => {
+      if (selectedCountries.includes(c)) {
+        if (selectedCountries.length === 1) return;
+        selectedCountries = selectedCountries.filter(x => x !== c);
+      } else {
+        if (selectedCountries.length >= 4) return;
+        selectedCountries.push(c);
+      }
+      renderCountryChips();
+      radarChart.data.datasets = buildRadarDatasets();
+      radarChart.update();
+    };
+    container.appendChild(chip);
+  });
+}
+
+// ============================================================
+// SCATTER CHART
+// ============================================================
+new Chart(document.getElementById('chartScatter'), {
+  type: 'scatter',
+  data: {
+    datasets: [{
+      label: 'Pays',
+      data: [
+        {x:1200,y:105,label:'USA'},{x:280,y:78,label:'UK'},{x:260,y:72,label:'DEU'},
+        {x:230,y:62,label:'FRA'},{x:420,y:18,label:'IND'},{x:680,y:32,label:'CHN'},
+        {x:140,y:82,label:'AUS'},{x:70,y:118,label:'CHE'},{x:95,y:88,label:'SGP'},
+        {x:90,y:74,label:'NLD'},{x:160,y:24,label:'BRA'},{x:110,y:95,label:'ISR'},
+        {x:120,y:48,label:'ESP'},{x:95,y:42,label:'POL'},
+      ],
+      backgroundColor: 'rgba(0,212,255,0.7)',
+      pointRadius: 8,
+      pointHoverRadius: 11,
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.raw.label} — ${ctx.raw.x}k offres | ${ctx.raw.y}k€ médian` } }
+    },
+    scales: {
+      x: { title:{ display:true, text:'Volume d\'offres Tech (000)', color:'#64748b', font:{family:'DM Mono',size:11} }, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#64748b',font:{family:'DM Mono',size:11}} },
+      y: { title:{ display:true, text:'Salaire médian (k€/an)', color:'#64748b', font:{family:'DM Mono',size:11} }, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#64748b',font:{family:'DM Mono',size:11},callback:v=>v+'k€'} }
+    }
+  }
+});
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'carte' && !mapSVG) initMap();
+  if (id === 'comparaison' && !radarChart) { initRadar(); renderCountryChips(); }
+}
+
+// ============================================================
+// THEME
+// ============================================================
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.querySelector('.btn-icon[onclick="toggleTheme()"]').textContent = isDark ? '🌑' : '🌙';
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+function exportData() {
+  const rows = [['Rang','Métier','Secteur','Salaire médian','Demande','Score']];
+  jobsData.forEach(d => rows.push([d.rank, d.title, sectorLabel[d.sector], d.salary, d.demand, d.score]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'dashboard-emploi-tech-2024.csv';
+  a.click();
+}
+</script>
+</body>
+</html>
