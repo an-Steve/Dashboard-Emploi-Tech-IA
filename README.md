@@ -10,7 +10,7 @@
 
 ---
 
-![Dashboard Preview](https://i.imgur.com/placeholder-preview.png)
+<img width="1903" height="535" alt="image" src="https://github.com/user-attachments/assets/d2d12718-0581-4705-9d85-35cd75f26497" />
 
 ---
 
@@ -33,27 +33,29 @@ Ce dashboard analytique a été conçu pour explorer et visualiser les grandes t
 ###  Vue d'ensemble & KPIs
 Affichage de 4 indicateurs clés animés : volume d'offres mondiales, salaire médian, postes IA ouverts et taux de chômage Tech. Graphique en anneau (Donut Chart) de la répartition par secteur et courbe d'évolution depuis 2019.
 
-![Overview](https://i.imgur.com/placeholder-overview.png)
+<img width="867" height="481" alt="image" src="https://github.com/user-attachments/assets/c139bac2-cc33-47ee-9df0-5998fc7a7dc1" />
+
 
 ###  Analyse des Salaires
 Comparaison des rémunérations médianes par rôle Tech (horizontal bar chart), évolution salariale selon l'expérience (Junior → Lead), indice de progression salariale Tech vs autres secteurs, et répartition des avantages (télétravail, stock-options, formation…).
 
-![Salaires](https://i.imgur.com/placeholder-salaires.png)
+<img width="1776" height="572" alt="image" src="https://github.com/user-attachments/assets/25038143-dc45-44dd-9f3f-62d511f5e517" />
 
 ###  Carte des Compétences
 Classement des technologies les plus demandées dans les offres d'emploi, croissance des offres liées à l'IA par framework (LLMs, MLOps, RAG…), et bubble chart croisant popularité d'un langage, salaire médian et volume d'offres.
 
-![Compétences](https://i.imgur.com/placeholder-skills.png)
+<img width="1755" height="573" alt="image" src="https://github.com/user-attachments/assets/09169ff7-95b0-4544-83a3-de4bd1ac8cc0" />
+
 
 ###  Cartographie Mondiale Interactive
 Carte choroplèthe développée avec **D3.js** et **TopoJSON** permettant de visualiser, pays par pays, le volume d'offres Tech, le salaire médian ou la croissance du marché. Système de tooltip au survol avec données détaillées.
 
-![Carte](https://i.imgur.com/placeholder-map.png)
+<img width="1757" height="666" alt="image" src="https://github.com/user-attachments/assets/650a6083-6511-48e2-be94-2947f98c311b" />
 
 ###  Comparateur de Pays (Radar Chart)
 Outil permettant de sélectionner jusqu'à 4 pays pour comparer leurs performances sur 6 dimensions : volume d'offres, niveau de salaire, croissance, formation Tech, innovation et attractivité du marché. Scatter plot corrélant offres et salaire par pays.
 
-![Comparaison](https://i.imgur.com/placeholder-radar.png)
+<img width="882" height="673" alt="image" src="https://github.com/user-attachments/assets/765f24ab-bfe7-442b-aa9c-f5ec2a56c7d9" />
 
 ---
 
@@ -83,7 +85,7 @@ Outil permettant de sélectionner jusqu'à 4 pays pour comparer leurs performanc
 
 ---
 
-## 📁 Structure du projet
+##  Structure du projet
 
 ```
 Dashboard-Emploi-Tech/
